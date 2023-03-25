@@ -64,6 +64,7 @@ public class BigramFrequencyPairs extends Configured implements Tool {
 
 		// Reuse objects.
 		private final static FloatWritable VALUE = new FloatWritable();
+		private static int total = 0;
 
 		@Override
 		public void reduce(PairOfStrings key, Iterable<IntWritable> values,
