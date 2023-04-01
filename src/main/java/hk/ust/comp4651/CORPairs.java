@@ -53,6 +53,21 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Set<String> word_set = new HashSet<String>();
+			String word = new String();
+			Text KEY = new Text();
+			IntWritable ONE = new IntWritable(1);
+			
+			String clean_doc = value.toString().replaceAll("[^a-z A-Z]", " ");
+			StringTokenizer doc_tokenizer = new StringTokenizer(clean_doc);
+
+			while (doc_tokenizer.hasMoreTokens()) {
+				word = doc_tokenizer.nextToken();
+				if (word_set.add(word)) { // 如果set里面没有当前word
+					KEY.set(word);
+					context.write(KEY, ONE);
+				}
+			}
 		}
 	}
 
@@ -66,7 +81,13 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			int sum = 0;
+			for (IntWritable val : values) {
+				sum += val.get();
+			}
+			context.write(key, new IntWritable(sum));
 		}
+	
 	}
 
 
@@ -81,6 +102,29 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Set<String> word_set_sorted = new TreeSet<String>();
+			String word = new String();
+			TextPair KEY = new TextPair();
+			Text first = new Text();
+			Text second = new Text();
+			IntWritable ONE = new IntWritable(1);
+
+			while (doc_tokenizer.hasMoreTokens()) {
+				word = doc_tokenizer.nextToken();
+				word_set_sorted.add(word);
+			}
+
+			String[] word_list = new String[word_set_sorted.size()];
+			word_set_sorted.toArray(word_list);
+  
+			for (int i = 0; i < word_list.length; i++) {           
+				for (int j = i + 1; j < word_list.length; j++) {               
+					first.set(word_list[i]);			    
+					second.set(word_list[j]);                  
+					KEY.set(first, second);                   
+					context.write(KEY, ONE);
+				}
+			}
 		}
 	}
 
@@ -93,6 +137,11 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			int sum = 0;    
+			for (IntWritable val : values) {        
+				sum += val.get();        
+			}
+			context.write(key, new IntWritable(sum));
 		}
 	}
 
@@ -145,6 +194,17 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			int sum = 0;
+           
+			double COR;
+            
+			for (IntWritable val : values) {       
+				sum += val.get();   
+			} 
+			double first_total = word_total_map.get(key.getFirst().toString());
+			double second_total = word_total_map.get(key.getSecond().toString());
+			COR = (sum * docs_num / (first_total * second_total));
+			context.write(key, new DoubleWritable(COR));
 		}
 	}
 
