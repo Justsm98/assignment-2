@@ -127,14 +127,19 @@ public class CORStripes extends Configured implements Tool {
 			Text temp_text;           
 			IntWritable temp_count;         
 			IntWritable total_count;          
-			for (MapWritable val : values) {            
-				for (Map.Entry<Writable, Writable> entry : val.entrySet()) {                
-					temp_text = (Text) entry.getKey();               
-					temp_count = (IntWritable) entry.getValue();                
-					total_count = (IntWritable) stripe_map.getOrDefault(temp_text, ZERO);                 
-					stripe_map.put(temp_text, new IntWritable(total_count.get() + temp_count.get()));              
-				}          
-			}
+			for (MapWritable val : values) {
+            for (Map.Entry<Writable, Writable> entry : val.entrySet()) {
+              temp_text = (Text) entry.getKey();
+            temp_count = (IntWritable) entry.getValue();
+            total_count = (IntWritable) stripe_map.get(temp_text);
+
+            if (total_count == null) {
+                stripe_map.put(temp_text, temp_count);
+            } else {
+                stripe_map.put(temp_text, new IntWritable(total_count.get() + temp_count.get()));
+            }
+        }
+    }
 			context.write(key, stripe_map);
 		}
 	}
@@ -197,16 +202,24 @@ public class CORStripes extends Configured implements Tool {
 				for (Map.Entry<Writable, Writable> entry : val.entrySet()) {          
 					temp_text = (Text) entry.getKey();        
 					temp_count = (IntWritable) entry.getValue();               
-					total_count = (IntWritable) stripe_map.getOrDefault(temp_text, ZERO);             
-					stripe_map.put(temp_text, new IntWritable(total_count.get() + temp_count.get()));            
+					total_count = (IntWritable) stripe_map.get(temp_text);             
+					if (total_count == null) {
+                stripe_map.put(temp_text, temp_count);
+            } else {
+                stripe_map.put(temp_text, new IntWritable(total_count.get() + temp_count.get()));
+            }            
 				}         
 			}		
-			double PMI;       
+			double COR;       
 			for (Map.Entry<Writable, Writable> entry : stripe_map.entrySet()) {     
 				temp_text = (Text) entry.getKey();
 				temp_count = (IntWritable) entry.getValue();          
-				PMI = Math.log(docs_num * temp_count.get() / word_total_map.get(key.toString()) / word_total_map.get(temp_text.toString()));              
-				context.write(new TextPair(key, temp_text), new DoubleWritable(PMI));
+				int word_total = word_total_map.containsKey(key.toString()) ? word_total_map.get(key.toString()) : 0;
+        int temp_total = word_total_map.containsKey(temp_text.toString()) ? word_total_map.get(temp_text.toString()) : 0;
+        COR = (double) temp_count.get() / word_total / temp_total;
+              String temp_string_text = temp_text.toString();
+              String string_key = key.toString();
+        context.write(new PairOfStrings(string_key, temp_string_text), new DoubleWritable(COR));
 			}
 		}
 	}
