@@ -53,19 +53,24 @@ public class CORPairs extends Configured implements Tool {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
-			String word = new String();
-			Text KEY = new Text();
-			IntWritable ONE = new IntWritable(1);
-			
-
-			while (doc_tokenizer.hasMoreTokens()) {
-				word = doc_tokenizer.nextToken();
-				if (!word_set.containsKey(word)) {
-                  word_set.put(word, 1);
-					KEY.set(word);
-					context.write(KEY, ONE);
-				}
-			}
+			while (doc_tokenizer.hasMoreTokens()) 
+			{
+				String word = doc_tokenizer.nextToken().trim();
+			    	if (word_set.containsKey(word)) 
+				{
+					word_set.put(word, word_set.get(word) + 1);
+			    	} 
+				else 
+				{
+					word_set.put(word, 1);
+			    	}
+        		}
+       
+			for (Map.Entry<String, Integer> entry : word_set.entrySet()) 
+			{
+				context.write(new Text(entry.getKey()), new IntWritable(entry.getValue()));
+			 }
+			word_set.clear();
 		}
 	}
 
@@ -74,16 +79,20 @@ public class CORPairs extends Configured implements Tool {
 	 */
 	private static class CORReducer1 extends
 			Reducer<Text, IntWritable, Text, IntWritable> {
+      private final static IntWritable SUM = new IntWritable();
 		@Override
 		public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
 			/*
 			 * TODO: Your implementation goes here.
 			 */
+			Iterator<IntWritable> iter = values.iterator();
 			int sum = 0;
-			for (IntWritable val : values) {
-				sum += val.get();
+			while (iter.hasNext()) 
+			{
+				sum += iter.next().get();
 			}
-			context.write(key, new IntWritable(sum));
+			SUM.set(sum);
+			context.write(key, SUM);
 		}
 	
 	}
